@@ -8,6 +8,8 @@ else
         ~/cprogs/vendor \
         ~/rapid \
         ~/rapid/*/.worktrees \
+        ~/feewise \
+        ~/feewise/*/.worktrees \
         ~/dev \
         ~/dev/*/.worktrees \
         ~/dev/vendor \
