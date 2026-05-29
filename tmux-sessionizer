@@ -50,8 +50,17 @@ find_existing_session() {
     return 1
 }
 
+setup_new_session() {
+    local session=$1
+    local dir=$2
+    tmux new-session -ds "$session" -c "$dir" nvim .
+    tmux new-window -t "=$session" -c "$dir"
+    tmux select-window -t "=$session:0"
+}
+
 if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
-    tmux new-session -s "$selected_name" -c "$selected"
+    setup_new_session "$selected_name" "$selected"
+    tmux attach-session -t "=$selected_name"
     exit 0
 fi
 
@@ -61,7 +70,7 @@ if [[ -n $existing_session ]]; then
 fi
 
 if ! tmux has-session -t "=$selected_name" 2> /dev/null; then
-    tmux new-session -ds "$selected_name" -c "$selected"
+    setup_new_session "$selected_name" "$selected"
 fi
 
 tmux switch-client -t "=$selected_name"
