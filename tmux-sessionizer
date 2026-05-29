@@ -6,16 +6,19 @@ if [[ $# -eq 1 ]]; then
     selected=$1
 else
     selected=$(find \
-        ~/cprogs \
-        ~/cprogs/vendor \
         ~/rapid \
         ~/rapid/*/.worktrees \
         ~/feewise \
         ~/feewise/*/.worktrees \
+        ~/cprogs \
+        ~/cprogs/*/.worktrees \
+        ~/cprogs/vendor \
         ~/dev \
         ~/dev/*/.worktrees \
         ~/dev/vendor \
         ~/go/src \
+        ~/go/src/*/.worktrees \
+        ~/go/src/github.com/*/ \
         ~/.config \
         -mindepth 1 -maxdepth 1 -type d | fzf)
 fi
