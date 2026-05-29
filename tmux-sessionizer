@@ -30,98 +30,19 @@ tmux_running=$(pgrep tmux)
 
 find_existing_session() {
     local selected_path=$1
-    local base_name=$2
-    local project_name=
     local session_name
-    local session_path
-    local normalized_session_path
-    local exact_match=
-    local project_match=
-    local suffix_match=
-    local suffix_count=0
-    local path_match=
-    local path_count=0
-    local exact_path_match=
-    local project_path_match=
-    local suffix_path_match=
-    local suffix_path_count=0
+    local pane_current_path
+    local normalized_pane_path
 
-    if [[ $selected_path == */.worktrees/* ]]; then
-        project_name=$(basename "$(dirname "$(dirname "$selected_path")")" | tr . _)
-    fi
+    while IFS=$'\t' read -r session_name pane_current_path; do
+        [[ -z $session_name || -z $pane_current_path || ! -d $pane_current_path ]] && continue
 
-    while IFS=$'\t' read -r session_name session_path; do
-        [[ -z $session_name ]] && continue
-
-        if [[ -n $session_path && -d $session_path ]]; then
-            normalized_session_path=$(cd "$session_path" && pwd -P)
-            if [[ $normalized_session_path == "$selected_path" ]]; then
-                path_match=$session_name
-                ((path_count++))
-
-                if [[ $session_name == "$base_name" ]]; then
-                    exact_path_match=$session_name
-                fi
-
-                if [[ -n $project_name && $session_name == *" $project_name $base_name" ]]; then
-                    project_path_match=$session_name
-                fi
-
-                if [[ $session_name == *" $base_name" ]]; then
-                    suffix_path_match=$session_name
-                    ((suffix_path_count++))
-                fi
-            fi
+        normalized_pane_path=$(cd "$pane_current_path" && pwd -P)
+        if [[ $normalized_pane_path == "$selected_path" ]]; then
+            printf '%s\n' "$session_name"
+            return 0
         fi
-
-        if [[ $session_name == "$base_name" ]]; then
-            exact_match=$session_name
-        fi
-
-        if [[ -n $project_name && $session_name == *" $project_name $base_name" ]]; then
-            project_match=$session_name
-        fi
-
-        if [[ $session_name == *" $base_name" ]]; then
-            suffix_match=$session_name
-            ((suffix_count++))
-        fi
-    done < <(tmux list-sessions -F "#{session_name}	#{session_path}" 2> /dev/null)
-
-    if [[ -n $exact_path_match ]]; then
-        printf '%s\n' "$exact_path_match"
-        return 0
-    fi
-
-    if [[ -n $project_path_match ]]; then
-        printf '%s\n' "$project_path_match"
-        return 0
-    fi
-
-    if [[ $suffix_path_count -eq 1 ]]; then
-        printf '%s\n' "$suffix_path_match"
-        return 0
-    fi
-
-    if [[ $path_count -eq 1 ]]; then
-        printf '%s\n' "$path_match"
-        return 0
-    fi
-
-    if [[ -n $exact_match ]]; then
-        printf '%s\n' "$exact_match"
-        return 0
-    fi
-
-    if [[ -n $project_match ]]; then
-        printf '%s\n' "$project_match"
-        return 0
-    fi
-
-    if [[ $suffix_count -eq 1 ]]; then
-        printf '%s\n' "$suffix_match"
-        return 0
-    fi
+    done < <(tmux list-panes -a -F "#{session_name}	#{pane_current_path}" 2> /dev/null)
 
     return 1
 }
@@ -131,7 +52,7 @@ if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
     exit 0
 fi
 
-existing_session=$(find_existing_session "$selected" "$selected_name")
+existing_session=$(find_existing_session "$selected")
 if [[ -n $existing_session ]]; then
     selected_name=$existing_session
 fi
