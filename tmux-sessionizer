@@ -53,7 +53,8 @@ find_existing_session() {
 setup_new_session() {
     local session=$1
     local dir=$2
-    tmux new-session -ds "$session" -c "$dir" nvim .
+    tmux new-session -ds "$session" -c "$dir"
+    tmux send-keys -t "=$session:0" "nvim ." Enter
     tmux new-window -t "=$session:" -c "$dir"
     tmux select-window -t "=$session:0"
 }
