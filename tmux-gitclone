@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+vendor_dir="$HOME/dev/vendor"
+
+if [[ $# -eq 1 ]]; then
+    repo=$1
+else
+    read -r -p "Git repo: " repo
+fi
+
+if [[ -z ${repo:-} ]]; then
+    exit 0
+fi
+
+repo_name=${repo%/}
+repo_name=${repo_name##*/}
+repo_name=${repo_name%.git}
+
+if [[ -z $repo_name ]]; then
+    printf 'Could not determine repo name from: %s\n' "$repo" >&2
+    read -r -p "Press enter to close..."
+    exit 1
+fi
+
+selected="$vendor_dir/$repo_name"
+
+mkdir -p "$vendor_dir"
+
+if [[ ! -d $selected ]]; then
+    git clone --depth 1 "$repo" "$selected"
+fi
+
+"$HOME/.config/tmux/tmux-sessionizer" "$selected"
