@@ -17,6 +17,7 @@ else
         ~/go/src \
         ~/go/src/*/.worktrees \
         ~/go/src/github.com/*/ \
+        ~/cgeek \
         ~/.config \
         -mindepth 1 -maxdepth 1 -type d | fzf)
 fi
