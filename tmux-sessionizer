@@ -35,18 +35,20 @@ tmux_running=$(pgrep tmux)
 find_existing_session() {
     local selected_path=$1
     local session_name
+    local window_index
+    local pane_id
     local pane_current_path
     local normalized_pane_path
 
-    while IFS=$'\t' read -r session_name pane_current_path; do
-        [[ -z $session_name || -z $pane_current_path || ! -d $pane_current_path ]] && continue
+    while IFS=$'\t' read -r session_name window_index pane_id pane_current_path; do
+        [[ -z $session_name || -z $window_index || -z $pane_id || -z $pane_current_path || ! -d $pane_current_path ]] && continue
 
         normalized_pane_path=$(cd "$pane_current_path" && pwd -P)
         if [[ $normalized_pane_path == "$selected_path" ]]; then
-            printf '%s\n' "$session_name"
+            printf '%s\t%s\t%s\n' "$session_name" "$window_index" "$pane_id"
             return 0
         fi
-    done < <(tmux list-panes -a -F "#{session_name}	#{pane_current_path}" 2> /dev/null)
+    done < <(tmux list-panes -a -F "#{session_name}	#{window_index}	#{pane_id}	#{pane_current_path}" 2> /dev/null)
 
     return 1
 }
@@ -66,9 +68,11 @@ if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
     exit 0
 fi
 
-existing_session=$(find_existing_session "$selected")
-if [[ -n $existing_session ]]; then
-    selected_name=$existing_session
+existing_window=""
+existing_pane=""
+existing_match=$(find_existing_session "$selected")
+if [[ -n $existing_match ]]; then
+    IFS=$'\t' read -r selected_name existing_window existing_pane <<< "$existing_match"
 fi
 
 if ! tmux has-session -t "=$selected_name" 2> /dev/null; then
@@ -76,3 +80,9 @@ if ! tmux has-session -t "=$selected_name" 2> /dev/null; then
 fi
 
 tmux switch-client -t "=$selected_name"
+if [[ -n $existing_window ]]; then
+    tmux select-window -t "=$selected_name:$existing_window"
+fi
+if [[ -n $existing_pane ]]; then
+    tmux select-pane -t "$existing_pane"
+fi
