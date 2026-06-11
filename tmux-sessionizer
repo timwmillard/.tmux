@@ -28,7 +28,7 @@ if [[ -z $selected ]]; then
     exit 0
 fi
 
-selected=$(cd "$selected" && pwd -P) || exit 1
+selected=$(cd "$selected" && pwd -L) || exit 1
 selected_name=$(basename "$selected" | tr . _)
 tmux_running=$(pgrep tmux)
 
@@ -43,7 +43,7 @@ find_existing_session() {
     while IFS=$'\t' read -r session_name window_index pane_id pane_current_path; do
         [[ -z $session_name || -z $window_index || -z $pane_id || -z $pane_current_path || ! -d $pane_current_path ]] && continue
 
-        normalized_pane_path=$(cd "$pane_current_path" && pwd -P)
+        normalized_pane_path=$(cd "$pane_current_path" && pwd -L)
         if [[ $normalized_pane_path == "$selected_path" ]]; then
             printf '%s\t%s\t%s\n' "$session_name" "$window_index" "$pane_id"
             return 0
